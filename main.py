@@ -1,12 +1,19 @@
 import tkinter as tk
-from tkinter import PhotoImage, font
+from tkinter import PhotoImage, font, ttk
 import speech_recognition as sr
 from deep_translator import GoogleTranslator
 import threading
 
+def available_microphones():
+    return sr.Microphone.list_microphone_names()
+
+def set_microphone(index):
+    global mic
+    mic = sr.Microphone(device_index=index)
+
 def listen_and_translate():
     recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
+    with mic as source:
         recognizer.adjust_for_ambient_noise(source, duration=1)
         while True:  # Sürekli dinleme ve çeviri için döngü
             message_label.config(text="Listening...", fg="green")
@@ -17,7 +24,7 @@ def listen_and_translate():
                 audio_text.delete('1.0', tk.END)
                 audio_text.insert(tk.END, text)
                 audio_text.tag_add("center", "1.0", "end")
-                translation = GoogleTranslator(source='auto', target='tr').translate(text)
+                translation = GoogleTranslator(source='en', target='tr').translate(text)
                 translated_text.delete('1.0', tk.END)
                 translated_text.insert(tk.END, translation)
                 translated_text.tag_add("center", "1.0", "end")
@@ -55,6 +62,14 @@ icon_label.pack(side=tk.RIGHT, padx=10, pady=10)
 
 message_label = tk.Label(root, text="", bg="white", fg="black")
 message_label.pack(fill=tk.X, pady=10)
+
+# Dropdown menu for microphone selection
+mic_list = available_microphones()
+mic_menu = ttk.Combobox(root, values=mic_list, width=50)
+mic_menu.pack(pady=20)
+mic_menu.current(0)  # Default to the first microphone
+set_microphone(mic_menu.current())  # Initialize with default microphone
+mic_menu.bind("<<ComboboxSelected>>", lambda event: set_microphone(mic_menu.current()))
 
 # Text areas with updated fonts and visible, centered text
 audio_text = tk.Text(root, height=4, width=50, bg="white", fg="black", borderwidth=0, highlightthickness=0, font=normal_font)
